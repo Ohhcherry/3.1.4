@@ -6,21 +6,22 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import ru.kata.spring.boot_security.demo.service.UserService;
 import ru.kata.spring.boot_security.demo.util.UserValidator;
 import ru.kata.spring.boot_security.demo.models.User;
-import ru.kata.spring.boot_security.demo.service.UserServiceImpl;
 
 import javax.validation.Valid;
 
 @Controller
+@RequestMapping("/admin")
 public class AdminController {
-    private final UserServiceImpl userServiceImpl;
+    private final UserService userService;
     private final UserValidator userValidator;
 
 
     @Autowired
-    public AdminController(UserServiceImpl userServiceImpl, UserValidator userValidator) {
-        this.userServiceImpl = userServiceImpl;
+    public AdminController(UserService userService, UserValidator userValidator) {
+        this.userService = userService;
         this.userValidator = userValidator;
     }
 
@@ -29,49 +30,49 @@ public class AdminController {
         return "index";
     }
 
-    @GetMapping("/admin/registration")
+    @GetMapping("/registration")
     public String registrationPage(@ModelAttribute("user") User user, Model model) {
-        model.addAttribute("listRoles", userServiceImpl.getUserRoles());
+        model.addAttribute("listRoles", userService.getUserRoles());
         return "admin/registration";
     }
 
-    @PostMapping("/admin/registration")
+    @PostMapping("/registration")
     public String perfomRegistration(@ModelAttribute("userAdd") @Valid User user
             , BindingResult bindingResult) {
         userValidator.validate(user, bindingResult);
         if (bindingResult.hasErrors()) {
             return "redirect:/admin/users";
         }
-        userServiceImpl.saveUser(user);
+        userService.saveUser(user);
         return "redirect:/admin/users";
     }
 
-    @GetMapping("/admin/users")
+    @GetMapping("/users")
     public String getUsers(Model model,@ModelAttribute("user") @Valid User user
             , BindingResult bindingResult  ) {
         User auth = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        model.addAttribute("users", userServiceImpl.getAllUsers());
-        model.addAttribute("person", userServiceImpl.findUserByUsername(auth.getUsername()));
-        model.addAttribute("listRoles", userServiceImpl.getUserRoles());
+        model.addAttribute("users", userService.getAllUsers());
+        model.addAttribute("person", userService.findUserByUsername(auth.getUsername()));
+        model.addAttribute("listRoles", userService.getUserRoles());
         return "admin/users";
     }
 
-    @GetMapping("/admin/{id}/edit")
+    @GetMapping("/{id}/edit")
     public String edit(Model model, @PathVariable("id") Long id) {
-        model.addAttribute("userEdit", userServiceImpl.findUserById(id));
+        model.addAttribute("userEdit", userService.findUserById(id));
         return "admin/edit";
     }
 
-    @PatchMapping("/admin/{id}")
+    @PatchMapping("/{id}")
     public String update(@ModelAttribute("user") User user
             , @PathVariable("id") Long id) {
-        userServiceImpl.updateUser(id, user);
+        userService.updateUser(id, user);
         return "redirect:/admin/users";
     }
 
-    @DeleteMapping("/admin/{id}")
+    @DeleteMapping("/{id}")
     public String delete(@PathVariable("id") Long id) {
-        userServiceImpl.deleteUser(id);
+        userService.deleteUser(id);
         return "redirect:/admin/users";
     }
 }
